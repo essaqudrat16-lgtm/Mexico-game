@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mexico Quiz</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f1e5;
+  color: #183b35;
+  display: flex;
+  justify-content: center;
+  padding: 25px 12px;
+}
+.container {
+  width: 100%;
+  max-width: 650px;
+  background: white;
+  border-radius: 18px;
+  padding: 25px;
+  box-shadow: 0 8px 30px #0002;
+}
+h1 { text-align: center; color: #08744d; }
+.subtitle { text-align: center; color: #777; }
+.progress {
+  height: 9px;
+  background: #eee;
+  border-radius: 20px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+#bar {
+  height: 100%;
+  width: 0%;
+  background: #08744d;
+  transition: .3s;
+}
+.category { color: #08744d; font-weight: bold; }
+.question { font-size: 23px; margin: 18px 0; }
+.option {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin: 10px 0;
+  background: #f5f5f5;
+  border: 2px solid #eee;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 16px;
+}
+.option:hover:not(:disabled) {
+  border-color: #08744d;
+  background: #e8f5ec;
+}
+.option:disabled { cursor: default; color: #183b35; }
+.correct { background: #d8f5df; border-color: #159447; }
+.wrong { background: #ffe0e0; border-color: #df4545; }
+button.main {
+  background: #08744d;
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  padding: 14px 22px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 15px;
+}
+button.main:hover { background: #065d3e; }
+#feedback { margin-top: 15px; font-weight: bold; }
+#result { text-align: center; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🇲🇽 Mexico Quiz</h1>
+  <p class="subtitle">Test your knowledge of Mexico!</p>
+
+  <div id="game">
+    <div class="progress"><div id="bar"></div></div>
+    <p id="counter">Question 1 of 10</p>
+    <p class="category" id="category"></p>
+    <h2 class="question" id="question"></h2>
+    <div id="options"></div>
+    <p id="feedback"></p>
+    <button class="main hidden" id="next" onclick="nextQuestion()">Next Question →</button>
+  </div>
+
+  <div id="result" class="hidden">
+    <h2>Quiz Completed! 🎉</h2>
+    <h1 id="score"></h1>
+    <p id="message"></p>
+    <div id="review" style="text-align:left"></div>
+    <button class="main" onclick="startQuiz()">🔄 Play Again</button>
+  </div>
+</div>
+
+<script>
+const bank = [
+["GENERAL","What is the capital of Mexico?",["Guadalajara","Mexico City","Cancún","Monterrey"],1],
+["GENERAL","Which continent is Mexico in?",["South America","Europe","North America","Asia"],2],
+["GENERAL","What language is most widely spoken in Mexico?",["French","Portuguese","English","Spanish"],3],
+["GENERAL","What is Mexico's currency?",["Peso","Dollar","Euro","Real"],0],
+["GENERAL","Which country borders Mexico to the north?",["Brazil","United States","Chile","Peru"],1],
+["GENERAL","Which ocean is on Mexico's west coast?",["Indian","Arctic","Pacific","Southern"],2],
+["GENERAL","Which body of water lies to Mexico's east?",["Gulf of Mexico","Red Sea","Baltic Sea","Caspian Sea"],0],
+["GENERAL","What is the largest city in Mexico?",["Tijuana","Mérida","Puebla","Mexico City"],3],
+["FLAG","What are the three colors of Mexico's flag?",["Blue, white, red","Green, white, red","Green, yellow, blue","Black, white, red"],1],
+["FLAG","Which color appears on the LEFT of Mexico's flag?",["Green","Red","White","Yellow"],0],
+["FLAG","Which color appears in the MIDDLE of Mexico's flag?",["Green","Blue","Red","White"],3],
+["FLAG","Which color appears on the RIGHT of Mexico's flag?",["Yellow","Green","Red","White"],2],
+["FLAG","What is shown at the center of the flag?",["A lion","An eagle and snake","A star","A sun"],1],
+["FLAG","What is the eagle standing on?",["A cactus","A mountain","A boat","A tree"],0],
+["FLAG","What is the eagle holding in its beak?",["A flower","A fish","A key","A snake"],3],
+["SYMBOLS","Which bird appears in Mexico's coat of arms?",["Toucan","Parrot","Eagle","Penguin"],2],
+["SYMBOLS","Which plant appears in the coat of arms?",["Bamboo","Prickly pear cactus","Palm tree","Rose bush"],1],
+["SYMBOLS","Which flower is Mexico's national flower?",["Dahlia","Tulip","Rose","Lavender"],0],
+["SYMBOLS","What is a nopal?",["A musical instrument","A bird","A hat","A type of cactus"],3],
+["SYMBOLS","What is a sombrero?",["A drum","A colorful blanket","A wide-brimmed hat","A dance"],2],
+["HISTORY","Which civilization built Chichén Itzá?",["Roman","Maya","Inca","Greek"],1],
+["HISTORY","Which ancient city is famous for the Pyramid of the Sun?",["Teotihuacán","Cancún","Oaxaca City","Tulum"],0],
+["HISTORY","In which year did Mexico begin its fight for independence?",["1492","1910","2000","1810"],3],
+["HISTORY","When is Mexican Independence Day?",["May 5","October 31","September 16","December 25"],2],
+["HISTORY","What is celebrated on November 1 and 2?",["Earth Day","Día de Muertos","New Year","Flag Day"],1],
+["LANDMARKS","Which site is famous for the pyramid El Castillo?",["Chichén Itzá","Colosseum","Stonehenge","Machu Picchu"],0],
+["LANDMARKS","Which Mexican city is known for canals and colorful boats?",["Tijuana","León","Acapulco","Xochimilco"],3],
+["LANDMARKS","Which place is known for beaches on the Yucatán Peninsula?",["Mexico City","Toluca","Cancún","Zacatecas"],2],
+["LANDMARKS","Which Mexican state shares its name with its capital, Oaxaca City?",["Sonora","Oaxaca","Chiapas","Jalisco"],1],
+["LANDMARKS","Which peninsula is in northwestern Mexico?",["Baja California","Florida","Arabian","Iberian"],0],
+["FOOD","What are tacos usually made with?",["Rice paper","Pancakes","Corn or wheat tortillas","Bread rolls"],2],
+["FOOD","What is guacamole mainly made from?",["Potatoes","Bananas","Tomatoes","Avocados"],3],
+["FOOD","Which dish is a corn-dough parcel often wrapped and steamed?",["Tamales","Sushi","Pizza","Pasta"],0],
+["FOOD","What are churros?",["A spicy soup","Fried dough treats","A kind of cheese","A fruit"],1],
+["FOOD","What is pozole?",["A dance","A drink","A hominy soup or stew","A hat"],2],
+["FOOD","Which Mexican sauce can contain chili peppers and chocolate?",["Pesto","Ketchup","Mayonnaise","Mole"],3],
+["MUSIC","What is mariachi?",["A traditional music style","A Mexican pyramid","A dessert","A seaside town"],0],
+["MUSIC","Which instrument is common in mariachi bands?",["Bagpipes","Trumpet","Sitar","Didgeridoo"],1],
+["MUSIC","What is a vihuela mexicana?",["A flower","A soup","A small guitar-like instrument","A dance shoe"],2],
+["MUSIC","What traditional outfit may mariachi musicians wear?",["Spacesuit","Kimono","Toga","Traje de charro"],3],
+["PHRASES","What does ¡Hola! mean?",["Hello!","Goodbye!","Thank you!","Please!"],0],
+["PHRASES","How do you say Thank you in Spanish?",["Adiós","Gracias","Por favor","Buenas noches"],1],
+["PHRASES","What does Buenos días mean?",["Good night","See you soon","Good morning","Excuse me"],2],
+["PHRASES","How do you say Please in Spanish?",["De nada","Hola","Hasta luego","Por favor"],3],
+["PHRASES","What does ¿Cómo estás? mean?",["How are you?","How much?","Where is it?","What time is it?"],0],
+["PHRASES","What does Adiós mean?",["Welcome","Goodbye","Good morning","Yes"],1],
+["PHRASES","How do you say Yes in Spanish?",["No","Gracias","Sí","Hola"],2],
+["PHRASES","What does De nada mean?",["I am hungry","Please","Good evening","You're welcome"],3],
+["PHRASES","What does Hasta luego mean?",["See you later","Good morning","Thank you","Nice to meet you"],0],
+["PHRASES","How do you say Good night in Spanish?",["Buenas tardes","Buenas noches","Buenos días","Hasta mañana"],1]
+];
+
+let questions = [];
+let current = 0;
+let points = 0;
+let answered = false;
+let history = [];
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function startQuiz() {
+  questions = shuffle(bank).slice(0, 10).map(q => {
+    const options = shuffle(q[2].map((text, i) => ({
+      text, correct: i === q[3]
+    })));
+    return {category:q[0], question:q[1], options};
+  });
+
+  current = 0;
+  points = 0;
+  history = [];
+  document.getElementById("game").classList.remove("hidden");
+  document.getElementById("result").classList.add("hidden");
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = questions[current];
+
+  document.getElementById("counter").textContent =
+    `Question ${current + 1} of 10`;
+  document.getElementById("bar").style.width =
+    (current / 10 * 100) + "%";
+  document.getElementById("category").textContent = q.category;
+  document.getElementById("question").textContent = q.question;
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("next").classList.add("hidden");
+
+  const box = document.getElementById("options");
+  box.innerHTML = "";
+
+  q.options.forEach((option, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.textContent = ["A","B","C","D"][i] + "  " + option.text;
+    btn.onclick = () => chooseAnswer(i);
+    box.appendChild(btn);
+  });
+}
+
+function chooseAnswer(i) {
+  if (answered) return;
+  answered = true;
+
+  const q = questions[current];
+  const correct = q.options[i].correct;
+  if (correct) points++;
+
+  history.push({
+    question:q.question,
+    selected:q.options[i].text,
+    correct:q.options.find(o => o.correct).text,
+    right:correct
+  });
+
+  document.querySelectorAll(".option").forEach((btn, index) => {
+    btn.disabled = true;
+    if (q.options[index].correct) btn.classList.add("correct");
+    else if (index === i) btn.classList.add("wrong");
+  });
+
+  document.getElementById("feedback").textContent =
+    correct ? "✅ Correct! Great job!" :
+    "❌ Not quite! The correct answer is " +
+    q.options.find(o => o.correct).text;
+
+  document.getElementById("next").textContent =
+    current === 9 ? "See My Score →" : "Next Question →";
+  document.getElementById("next").classList.remove("hidden");
+}
+
+function nextQuestion() {
+  current++;
+  if (current < 10) showQuestion();
+  else finishQuiz();
+}
+
+function finishQuiz() {
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+  document.getElementById("bar").style.width = "100%";
+
+  document.getElementById("score").textContent = points + " / 10";
+  document.getElementById("message").textContent =
+    points === 10 ? "Perfect score! 🏆" :
+    points >= 8 ? "Amazing work! 🌟" :
+    points >= 6 ? "Good job! Keep practicing! 👍" :
+    "Keep studying! You can do it! 💪";
+
+  document.getElementById("review").innerHTML =
+    "<h3>Answer Review</h3>" +
+    history.map((h,i) => `
+      <p>
+        <b>${i+1}. ${h.question}</b><br>
+        Your answer: ${h.selected}<br>
+        ${h.right ? "✅ Correct" : "❌ Correct answer: " + h.correct}
+      </p>
+      <hr>
+    `).join("");
+}
+
+startQuiz();
+</script>
+</body>
+</html>
